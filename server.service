@@ -1,0 +1,16 @@
+[Unit]
+Description=abmelee webserver
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+RuntimeMaxSec=7d
+User=root
+WorkingDirectory=/root/albertamelee/
+ExecStart=/root/albertamelee/build/server
+
+[Install]
+WantedBy=multi-user.target
