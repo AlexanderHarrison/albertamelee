@@ -1,15 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alberta Melee</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alberta Melee</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: #000000;
+      color: #fff;
+      text-align: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .aitchling-bg {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      overflow: hidden;
+      z-index: 0;
+    }
+    .aitchling {
+      position: absolute;
+      --w: 200px;
+      width: var(--w);
+      height: auto;
+      bottom: calc(-1 * var(--w));
+      opacity: 0;
+      animation: rise linear infinite;
+      --s: 1;
+      transform-origin: center bottom;
+    }
+    img.aitchling {
+      clip-path: inset(10%);
+    }
+    .aitchling.text {
+      width: auto;
+      font-size: 1.2rem;
+      font-weight: bold;
+      white-space: nowrap;
+      text-shadow: 0 0 6px #000, 0 0 3px #000;
+      z-index: 1;
+    }
+    @keyframes rise {
+      0%   { transform: translateY(0) scale(var(--s)); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { transform: translateY(-110vh) scale(var(--s)); opacity: 0; }
+    }
+    .content {
+      position: relative;
+      z-index: 1;
+    }
+    .content h1 {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      letter-spacing: 2px;
+      text-shadow: 0 0 20px rgba(77, 195, 255, 0.6);
+    }
+    .content a {
+      display: inline-block;
+      padding: 0.9rem 1.8rem;
+      background: #5865F2;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: transform 0.15s, background 0.15s;
+    }
+    .content a:hover {
+      background: #4752c4;
+      transform: translateY(-2px);
+    }
+  </style>
 </head>
-
-<h1>Alberta Melee!</h1>
-
-<a href="https://discord.gg/6CKt5VcXrP">AB Melee Discord</a>
-
 <body>
+  <div class="aitchling-bg" id="aitchlingBg"></div>
+  <div class="content">
+    <h1>Alberta Melee!</h1>
+    <a href="https://discord.gg/6CKt5VcXrP">AB Melee Discord</a>
+  </div>
+  <script>
+    const FLOATER_COUNT = 12;
+    const PEACH_GIF = 'https://ssb.wiki.gallery/images/thumb/0/03/PeachDownSmashSSBM.gif/120px-PeachDownSmashSSBM.gif';
+    const AITCH_SCORES = [
+      'Aitch 2-1 Odin',
+      'Aitch 1-1 Yumina',
+      'Aitch 4-1 Jam',
+      'Aitch 6-3 Christo',
+      'Aitch 4-0 UncleGubsy',
+      'Aitch 1-0 Kia',
+      'Aitch 0-1 Anjo',
+      'Aitch 0-2 Duckrobin',
+      'Aitch 0-1 Venison',
+      'Aitch 0-5 Aujory',
+      'Aitch 0-1 Soonsay',
+    ];
+    // Thanks to Venison for the colours
+    const HIGH_CONTRAST_COLORS = [
+      "#FFFFFF", "#FFFF00", "#00FF00", "#00FFFF", "#FF00FF",
+      "#F2CA19", "#87E911", "#00FF85", "#1E90FF", "#FF0099",
+      "#F0F0F0", "#E0E0E0", "#FDF7B0", "#A8DADC", "#FF5722"
+    ];
+
+    const RANK_SIZE_MAX = 2.5;
+    const RANK_SIZE_MIN = 0.6;
+    const bg = document.getElementById('aitchlingBg');
+    const rand = (min, max) => Math.random() * (max - min) + min;
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    function sizeForRank(idx, total) {
+      const t = idx / (total - 1);
+      return RANK_SIZE_MAX - t * (RANK_SIZE_MAX - RANK_SIZE_MIN);
+    }
+
+    // probably the funniest line of code ive ever written
+    function makeAitchling() {
+      const isGif = Math.random() < 0.66;
+      let el;
+      if (isGif) {
+        el = document.createElement('img');
+        el.className = 'aitchling';
+        el.src = PEACH_GIF;
+        el.style.setProperty('--s', rand(0.5, 2.5));
+      } else {
+        el = document.createElement('div');
+        el.className = 'aitchling text';
+        const idx = Math.floor(Math.random() * AITCH_SCORES.length);
+        el.textContent = AITCH_SCORES[idx];
+        el.style.color = pick(HIGH_CONTRAST_COLORS);
+        el.style.setProperty('--s', sizeForRank(idx, AITCH_SCORES.length));
+      }
+      el.style.left = `${rand(0, 95)}%`;
+      el.style.animationDuration = `${rand(6, 12)}s`;
+      return el;
+    }
+    function runSlot(initialDelay) {
+      const el = makeAitchling();
+      const duration = parseFloat(el.style.animationDuration);
+      el.style.animationDelay = `${initialDelay}s`;
+      bg.appendChild(el);
+      const realTimeRemaining = duration + initialDelay;
+      setTimeout(() => {
+        el.remove();
+        runSlot(0);
+      }, realTimeRemaining * 1000);
+    }
+    for (let i = 0; i < FLOATER_COUNT; i++) {
+      runSlot(rand(-10, 0));
+    }
+  </script>
 </body>
 </html>
