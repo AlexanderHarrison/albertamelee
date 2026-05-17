@@ -1,0 +1,11 @@
+[Unit]
+Description=Get Alberta tournaments using the Start GG API
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/albertamelee/
+ExecStart=/root/albertamelee/get_ab_tournaments.sh
+User=root
+StandardOutput=journal
+StandardError=journal
