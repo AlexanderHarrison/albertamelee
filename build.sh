@@ -23,6 +23,7 @@ if [ "$1" = 'test' ]; then
 else
     /usr/bin/gcc ${F_FLAGS} ${WARN_FLAGS} ${PATH_FLAGS} ${BASE_FLAGS} src/server.c build/mongoose.o ${LINK_FLAGS} -o build/server 
 fi
+/usr/bin/gcc ${F_FLAGS} ${WARN_FLAGS} ${PATH_FLAGS} ${BASE_FLAGS} src/fill_template.c build/mongoose.o ${LINK_FLAGS} -o build/fill_template 
 
 if [ "$1" = 'release' ]; then
     strip build/server
