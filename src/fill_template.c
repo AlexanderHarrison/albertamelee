@@ -36,10 +36,19 @@ static int sort_tournaments_by_date(const void *a, const void *b) {
 
 #define Str(S) ((struct mg_str) { (char[]){S}, sizeof(S)-1 })
 
-static char to_class(char c) {
-    if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
-    if (c == ' ') c = '-';
-    return c;
+static void to_class(struct mg_str *s) {
+    size_t in_i = 0;
+    size_t out_i = 0;
+    
+    while (in_i != s->len) {
+        char c = s->buf[in_i++];
+        if ('a' <= c && c <= 'z') {}
+        else if ('A' <= c && c <= 'Z') c += 'a' - 'A';
+        else if (c == ' ') c = '-';
+        else continue;
+        s->buf[out_i++] = c;
+    }
+    s->len = out_i;
 }
 
 int main(void) {
@@ -99,13 +108,10 @@ int main(void) {
         region.buf++; region.len -= 2;
         address.buf++; address.len -= 2;
 
-        if (mg_strcasecmp(mg_json_get_tok(t, "$.isOnline"), Str("true")) == 0) {
+        if (mg_strcasecmp(mg_json_get_tok(t, "$.isOnline"), Str("true")) == 0)
             region = Str("online");
-        } else {
-            for (size_t c = 0; c < region.len; ++c)
-                region.buf[c] = to_class(region.buf[c]);
-        }
-        
+        to_class(&region);
+
         // parse timestamp
         time_t start_time_unix = 0;
         while (start_time_unix_str.len) {
