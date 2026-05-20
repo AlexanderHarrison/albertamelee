@@ -34,6 +34,14 @@ static int sort_tournaments_by_date(const void *a, const void *b) {
     return strncmp(t0.buf, t1.buf, len);
 }
 
+#define Str(S) ((struct mg_str) { (char[]){S}, sizeof(S)-1 })
+
+static char to_class(char c) {
+    if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
+    if (c == ' ') c = '-';
+    return c;
+}
+
 int main(void) {
     setenv("TZ", "America/Edmonton", 1);
     tzset();
@@ -81,16 +89,23 @@ int main(void) {
 
         struct mg_str name = mg_json_get_tok(t, "$.name");
         struct mg_str url = mg_json_get_tok(t, "$.url");
-        struct mg_str city = mg_json_get_tok(t, "$.city");
         struct mg_str address = mg_json_get_tok(t, "$.venueAddress");
         struct mg_str start_time_unix_str = mg_json_get_tok(t, "$.startAt");
-        
+        struct mg_str region = mg_json_get_tok(t, "$.city");
+
         // remove quotes
         name.buf++; name.len -= 2;
         url.buf++; url.len -= 2;
-        city.buf++; city.len -= 2;
+        region.buf++; region.len -= 2;
         address.buf++; address.len -= 2;
 
+        if (mg_strcasecmp(mg_json_get_tok(t, "$.isOnline"), Str("true")) == 0) {
+            region = Str("online");
+        } else {
+            for (size_t c = 0; c < region.len; ++c)
+                region.buf[c] = to_class(region.buf[c]);
+        }
+        
         // parse timestamp
         time_t start_time_unix = 0;
         while (start_time_unix_str.len) {
@@ -100,16 +115,14 @@ int main(void) {
             start_time_unix_str.len--;
         }
         
-        write_const("<a class=tournament-card href=\"https://start.gg");
+        write_const("<a class=\"tournament-card ");
+        write_str(region);
+        write_const("\" href=\"https://start.gg");
             write_str(url);
         write_const("\">");
             write_const("<div class=tournament-name>");
                 write_str(name);
             write_const("</div>");
-            (void)city;
-            // write_const("<div class=tournament-city>");
-            //     write_str(city);
-            // write_const("</div>");
             write_const("<div class=tournament-date>");
                 struct tm tm;
                 localtime_r(&start_time_unix, &tm);

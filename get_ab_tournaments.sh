@@ -1,7 +1,7 @@
 #!/bin/bash
 QUERY=$(cat << EOF
 {"query": "query TournamentsByState { tournaments(query: { perPage: 100, filter: {addrState: \"AB\", afterDate: $(date +%s), videogameIds: [1]}}) \
-{ nodes { name url city startAt venueAddress } } }"}
+{ nodes { name url city startAt venueAddress isOnline } } }"}
 EOF)
 
 curl -X POST https://api.start.gg/gql/alpha \
