@@ -1,6 +1,6 @@
 #!/bin/bash
 QUERY=$(cat << EOF
-{"query": "query TournamentsByState { tournaments(query: { perPage: 100, filter: {addrState: \"AB\", afterDate: $(date +%s), videogameIds: [1]}}) \
+{"query": "query TournamentsByState { tournaments(query: { perPage: 100, filter: {addrState: \"AB\", afterDate: $(($(date +%s) - 12*60*60)), videogameIds: [1]}}) \
 { nodes { name url city startAt venueAddress isOnline } } }"}
 EOF
 )
