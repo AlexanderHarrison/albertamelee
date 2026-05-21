@@ -29,7 +29,7 @@ void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
     if (ev == MG_EV_HTTP_MSG) {
         struct mg_http_message *hm = (struct mg_http_message *) ev_data;
         if (mg_match(hm->method, mg_str("GET"), NULL)) {
-            struct mg_http_serve_opts opts = { .root_dir = "web_root" };
+            struct mg_http_serve_opts opts = { .root_dir = "build/web_root/" };
             mg_http_serve_dir(c, hm, &opts);
         }
     }

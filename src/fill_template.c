@@ -9,14 +9,18 @@
 #define MG_TLS MG_TLS_OPENSSL
 #include "vendor/mongoose.h"
 
-static char template[1 << 20];
+static char src[1 << 20];
 static char json[1 << 20];
-static char output[1 << 20];
-static char *output_cursor = output;
+static char dst[1 << 20];
+static char *src_cursor;
+static char *dst_cursor;
+
+static int dirfd_src;
+static int dirfd_dst;
 
 static void write_html(const char *ptr, size_t size) {
-    memcpy(output_cursor, ptr, size);
-    output_cursor += size;
+    memcpy(dst_cursor, ptr, size);
+    dst_cursor += size;
 }
 
 static void write_str(struct mg_str s) {
@@ -51,24 +55,8 @@ static void to_class(struct mg_str *s) {
     s->len = out_i;
 }
 
-int main(void) {
-    setenv("TZ", "America/Edmonton", 1);
-    tzset();
-
-    size_t template_size = fread(template, 1, sizeof(template), fopen("template.html", "rb"));
-    size_t json_size = fread(json, 1, sizeof(json), fopen("ab_tournaments.json", "rb"));
-
-    static const char template_str[] = "{AB_TOURNAMENTS}";
-    unsigned template_replace_idx = 0;
-    for (;; template_replace_idx++) {
-        if (memcmp(template + template_replace_idx, template_str, sizeof(template_str)-1) == 0) {
-            break;
-        }
-    }
-    write_html(template, template_replace_idx);
-
-    struct mg_str json_str = { json, json_size };
-
+static void insert_ab_tournaments(void) {
+    struct mg_str json_str = { json, sizeof(json) }; // TODO: slowdown?
     struct mg_str errors = mg_json_get_tok(json_str, "$.errors");
     if (errors.len) {
         write_const("<div class=tournament-errors>");
@@ -142,9 +130,49 @@ int main(void) {
             write_const("</div>");
         write_const("</a>");
     }
+}
 
-    unsigned template_replace_idx_end = template_replace_idx + sizeof(template_str)-1;
-    write_html(template + template_replace_idx_end, template_size - template_replace_idx_end);
+static void fill_template(const char *filename) {
+    int src_fd = openat(dirfd_src, filename, O_RDONLY);
+    ssize_t src_size = read(src_fd, src, sizeof(src));
+    char *src_end = src + src_size;
 
-    fwrite(output, 1, (size_t)(output_cursor - output), fopen("web_root/index.html", "wb+"));
+    src_cursor = src;
+    dst_cursor = dst;
+    while (src_cursor != src_end) {
+        char c = *src_cursor;
+        if (c == '{') {
+            static const char ab_tournaments[] = "{AB_TOURNAMENTS}";
+            if (memcmp(src_cursor, ab_tournaments, sizeof(ab_tournaments)-1) == 0) {
+                insert_ab_tournaments();
+                src_cursor += sizeof(ab_tournaments)-1;
+                continue;
+            }
+        }
+        *dst_cursor = c;
+        dst_cursor++;
+        src_cursor++;
+    }
+
+    int dst_fd = openat(dirfd_dst, filename, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+    write(dst_fd, dst, (size_t)(dst_cursor - dst));
+}
+
+int main(void) {
+    setenv("TZ", "America/Edmonton", 1);
+    tzset();
+
+    dirfd_src = open("html/", O_RDONLY | O_DIRECTORY);
+    dirfd_dst = open("build/web_root/", O_RDONLY | O_DIRECTORY);
+    int jsonfd = open("build/ab_tournaments.json", O_RDONLY);
+    read(jsonfd, json, sizeof(json));
+    
+    struct dirent **entries;
+    int entry_count = scandir("html/", &entries, NULL, NULL);
+    
+    for (int i = 0; i < entry_count; ++i) {
+        struct dirent *entry = entries[i];
+        if (entry->d_name[0] == '.') continue;
+        fill_template(entry->d_name);
+    }
 }

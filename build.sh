@@ -13,6 +13,7 @@ PATH_FLAGS="-I. -I/usr/include -I/usr/lib -I/usr/local/lib -I/usr/local/include"
 LINK_FLAGS="-lssl -lcrypto"
 
 mkdir -p build
+mkdir -p build/web_root
 
 if [ ! -f build/mongoose.o ]; then
     /usr/bin/gcc ${F_FLAGS} -DMG_TLS=MG_TLS_OPENSSL -c -O2 vendor/mongoose.c -o build/mongoose.o
