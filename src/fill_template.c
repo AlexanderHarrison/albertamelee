@@ -154,7 +154,7 @@ static void fill_template(const char *filename) {
         src_cursor++;
     }
 
-    int dst_fd = openat(dirfd_dst, filename, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+    int dst_fd = openat(dirfd_dst, filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     write(dst_fd, dst, (size_t)(dst_cursor - dst));
 }
 
